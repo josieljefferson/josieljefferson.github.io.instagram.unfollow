@@ -2,30 +2,32 @@
 name: Unfollow no Instagram
 
 on:
-  workflow_dispatch:  # permite rodar manualmente
+  workflow_dispatch:   # Permite rodar manualmente
   schedule:
-    - cron: "0 12 * * *"  # executa todo dia às 12h UTC (9h no Brasil)
+    - cron: "0 12 * * *"   # (opcional) Executa todo dia às 12h UTC (9h BR)
 
 jobs:
   run-script:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: 🧩 Fazer checkout do repositório
         uses: actions/checkout@v4
 
-      - name: Configurar Python
+      - name: 🐍 Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: Instalar dependências
+      - name: 📦 Atualizar pip e instalar dependências
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Executar script
+      - name: 🚀 Executar script de unfollow
         env:
           IG_USERNAME: ${{ secrets.IG_USERNAME }}
           IG_PASSWORD: ${{ secrets.IG_PASSWORD }}
+          IG_SESSION: ${{ secrets.IG_SESSION }}
         run: |
           python main.py
