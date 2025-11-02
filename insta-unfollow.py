@@ -13,15 +13,16 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# Configurações por variáveis de ambiente para segurança
+# Configurações
 USERNAME = os.getenv('INSTA_USERNAME')
 PASSWORD = os.getenv('INSTA_PASSWORD')
 MAX_UNFOLLOWS = int(os.getenv('MAX_UNFOLLOWS', 100))
 SLEEP_BETWEEN_ACTIONS = int(os.getenv('SLEEP_BETWEEN_ACTIONS', 10))
+SESSION_FILE = "instagram_session.json"
 
 def challenge_code_handler(username, choice):
     """
-    Handler para receber o código de verificação manualmente
+    Handler para receber o código de verificação
     """
     if choice == ChallengeRequired.EMAIL:
         print(f"Verificação por email enviada para {username}")
@@ -34,20 +35,40 @@ def challenge_code_handler(username, choice):
             return code
         print("Código inválido. Digite exatamente 6 dígitos.")
 
+def setup_client():
+    """
+    Configura o cliente Instagram com session management
+    """
+    cl = Client()
+    
+    # Tentar carregar sessão existente
+    if os.path.exists(SESSION_FILE):
+        try:
+            cl.load_settings(SESSION_FILE)
+            logging.info('Sessão anterior carregada.')
+        except Exception as e:
+            logging.warning(f'Erro ao carregar sessão: {e}')
+    
+    # Configurar handler de challenge
+    cl.challenge_code_handler = challenge_code_handler
+    
+    return cl
+
 def main():
     if not USERNAME or not PASSWORD:
         logging.error('Usuário ou senha não configurados nas variáveis de ambiente.')
         sys.exit(1)
 
-    cl = Client()
-    
-    # Configurar o handler de challenge
-    cl.challenge_code_handler = challenge_code_handler
+    cl = setup_client()
 
     try:
         logging.info('Efetuando login...')
         cl.login(USERNAME, PASSWORD)
-        logging.info('Login bem-sucedido!')
+        
+        # Salvar sessão para uso futuro
+        cl.dump_settings(SESSION_FILE)
+        logging.info('Login bem-sucedido e sessão salva!')
+        
     except (LoginRequired, ChallengeRequired, FeedbackRequired) as e:
         logging.error(f'Erro no login: {e}')
         sys.exit(1)
@@ -89,7 +110,7 @@ def main():
             time.sleep(SLEEP_BETWEEN_ACTIONS)
         except PleaseWaitFewMinutes as e:
             logging.warning(f'Aguardando devido a limitação: {e}')
-            time.sleep(600)  # Espera 10 minutos e continua
+            time.sleep(600)
             continue
         except Exception as e:
             logging.error(f'Erro ao deixar de seguir @{user.username}: {e}')
