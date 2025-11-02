@@ -19,12 +19,30 @@ PASSWORD = os.getenv('INSTA_PASSWORD')
 MAX_UNFOLLOWS = int(os.getenv('MAX_UNFOLLOWS', 100))
 SLEEP_BETWEEN_ACTIONS = int(os.getenv('SLEEP_BETWEEN_ACTIONS', 10))
 
+def challenge_code_handler(username, choice):
+    """
+    Handler para receber o código de verificação manualmente
+    """
+    if choice == ChallengeRequired.EMAIL:
+        print(f"Verificação por email enviada para {username}")
+    elif choice == ChallengeRequired.SMS:
+        print(f"Verificação por SMS enviada para {username}")
+    
+    while True:
+        code = input("Digite o código de 6 dígitos recebido: ").strip()
+        if code and code.isdigit() and len(code) == 6:
+            return code
+        print("Código inválido. Digite exatamente 6 dígitos.")
+
 def main():
     if not USERNAME or not PASSWORD:
         logging.error('Usuário ou senha não configurados nas variáveis de ambiente.')
         sys.exit(1)
 
     cl = Client()
+    
+    # Configurar o handler de challenge
+    cl.challenge_code_handler = challenge_code_handler
 
     try:
         logging.info('Efetuando login...')
@@ -34,6 +52,7 @@ def main():
         logging.error(f'Erro no login: {e}')
         sys.exit(1)
 
+    # Resto do código permanece igual...
     try:
         logging.info('Obtendo lista de seguidores...')
         followers = cl.user_followers(cl.user_id)
