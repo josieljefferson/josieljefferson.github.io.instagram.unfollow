@@ -1,0 +1,14 @@
+# Credenciais
+.env
+*.env
+
+# Logs
+*.log
+logs/
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Configurações do Instagram
+session.json
